@@ -3,6 +3,13 @@ import { Component, useEffect, type ReactNode } from 'react'
 import { api } from '../../convex/_generated/api'
 import { getDeploymentDriftInfo } from '../lib/deploymentDrift'
 
+const DEPLOYMENT_INFO_QUERY = {
+  deploymentInfo: {
+    query: api.appMeta.getDeploymentInfo,
+    args: {},
+  },
+} as const
+
 function getFrontendBuildSha() {
   return import.meta.env.VITE_APP_BUILD_SHA?.trim() || null
 }
@@ -40,12 +47,7 @@ class DeploymentDriftBannerBoundary extends Component<
 }
 
 function DeploymentDriftBannerContent() {
-  const deploymentInfoResult = useQueries({
-    deploymentInfo: {
-      query: api.appMeta.getDeploymentInfo,
-      args: {},
-    },
-  }).deploymentInfo
+  const deploymentInfoResult = useQueries(DEPLOYMENT_INFO_QUERY).deploymentInfo
   const deploymentInfo = deploymentInfoResult instanceof Error ? null : deploymentInfoResult
   const drift = getDeploymentDriftInfo({
     expectedBuildSha: getFrontendBuildSha(),
