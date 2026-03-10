@@ -1869,19 +1869,6 @@ export const listPublicPageV2 = query({
       ? result.page
       : filterPublicSkillPage(result.page, args)
 
-    // Backfill safety net: if the nonsuspicious index returns an empty page
-    // but isn't done, fall back to base index + JS filter for this page.
-    if (useNonsuspiciousIndex && filteredPage.length === 0 && !result.isDone) {
-      const fallbackPaginate = (cursor: string | null) =>
-        ctx.db
-          .query('skills')
-          .withIndex(SORT_INDEXES[sort], (q) => q.eq('softDeletedAt', undefined))
-          .order(dir)
-          .paginate({ cursor, numItems })
-      result = await fallbackPaginate(initialCursor)
-      filteredPage = filterPublicSkillPage(result.page, args)
-    }
-
     // When highlightedOnly, skip empty filtered pages so clients don't bounce.
     while (args.highlightedOnly && filteredPage.length === 0 && !result.isDone) {
       result = await runPaginate(result.continueCursor)
