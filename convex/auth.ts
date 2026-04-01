@@ -63,6 +63,10 @@ export const auth = {
   config: { providers: [] },
   signIn: async () => ({}),
   signOut: async () => ({}),
+  // Required by http.ts but no-op in dev mode
+  addHttpRoutes: (http: any) => {
+    // Do nothing - auth routes are disabled in dev mode
+  },
 };
 
 export const signIn = async () => ({});
