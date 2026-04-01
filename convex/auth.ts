@@ -66,11 +66,18 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   ],
   callbacks: {
     async afterUserCreatedOrUpdated(ctx, args) {
-      const user = await ctx.db.get(args.userId);
-      await handleDeletedUserSignIn(ctx, args, user);
-      await ctx.scheduler.runAfter(0, internal.publishers.ensurePersonalPublisherInternal, {
-        userId: args.userId,
-      });
+      try {
+        const user = await ctx.db.get(args.userId);
+        if (user) {
+          await handleDeletedUserSignIn(ctx, args, user);
+        }
+        await ctx.scheduler.runAfter(0, internal.publishers.ensurePersonalPublisherInternal, {
+          userId: args.userId,
+        });
+      } catch (error) {
+        // Log but don't re-throw - auth must succeed even if callbacks fail
+        console.error("afterUserCreatedOrUpdated error:", error);
+      }
     },
   },
 });
