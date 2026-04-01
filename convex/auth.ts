@@ -1,5 +1,10 @@
-import { Password } from "@convex-dev/auth/providers/Password";
-import { convexAuth } from "@convex-dev/auth/server";
+/**
+ * DEVELOPMENT MODE: Simplified auth without JWT validation
+ *
+ * In production, this would use @convex-dev/auth with proper JWT handling.
+ * For development, we bypass all auth checks to allow unrestricted access.
+ */
+
 import type { GenericMutationCtx } from "convex/server";
 import { ConvexError } from "convex/values";
 import { internal } from "./_generated/api";
@@ -53,41 +58,14 @@ export async function handleDeletedUserSignIn(
   throw new ConvexError(DELETED_ACCOUNT_REAUTH_MESSAGE);
 }
 
-// Development mode: Bypass JWT validation - all accounts pass through
-export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
-  providers: [
-    Password({
-      profile(params) {
-        return {
-          email: params.email as string,
-          name: (params.name as string) ?? (params.email as string).split("@")[0],
-        };
-      },
-    }),
-  ],
-  callbacks: {
-    async afterUserCreatedOrUpdated(ctx, args) {
-      try {
-        const user = await ctx.db.get(args.userId);
-        if (user) {
-          await handleDeletedUserSignIn(ctx, args, user);
-        }
-        await ctx.scheduler.runAfter(0, internal.publishers.ensurePersonalPublisherInternal, {
-          userId: args.userId,
-        });
-      } catch (error) {
-        // Log but don't re-throw - auth must succeed even if callbacks fail
-        console.error("afterUserCreatedOrUpdated error:", error);
-      }
-    },
-  },
-});
+// Stub auth exports - these match the Convex Auth API but are no-ops
+export const auth = {
+  config: { providers: [] },
+  signIn: async () => ({}),
+  signOut: async () => ({}),
+};
 
-// Stub implementations to allow auth to work without JWT
-export async function stub_signIn() {
-  return { userId: "dev-user" };
-}
-
-export async function stub_signOut() {
-  return { success: true };
-}
+export const signIn = async () => ({});
+export const signOut = async () => ({});
+export const store = {};
+export const isAuthenticated = true;
