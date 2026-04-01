@@ -1,15 +1,14 @@
 import { useAuthActions } from "@convex-dev/auth/react";
 import { Link } from "@tanstack/react-router";
 import { Menu, Monitor, Moon, Sun } from "lucide-react";
-import { useMemo, useRef } from "react";
-import { getUserFacingConvexError } from "../lib/convexError";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { gravatarUrl } from "../lib/gravatar";
 import { isModerator } from "../lib/roles";
 import { getClawHubSiteUrl, getSiteMode, getSiteName } from "../lib/site";
 import { applyTheme, useThemeMode } from "../lib/theme";
 import { startThemeTransition } from "../lib/theme-transition";
-import { setAuthError, useAuthError } from "../lib/useAuthError";
 import { useAuthStatus } from "../lib/useAuthStatus";
+import { LoginDialog } from "./LoginDialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,7 +20,7 @@ import { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group";
 
 export default function Header() {
   const { isAuthenticated, isLoading, me } = useAuthStatus();
-  const { signIn, signOut } = useAuthActions();
+  const { signOut } = useAuthActions();
   const { mode, setMode } = useThemeMode();
   const toggleRef = useRef<HTMLDivElement | null>(null);
   const siteMode = getSiteMode();
@@ -29,12 +28,14 @@ export default function Header() {
   const isSoulMode = siteMode === "souls";
   const clawHubUrl = getClawHubSiteUrl();
 
+  const [loginOpen, setLoginOpen] = useState(false);
+  const openLogin = useCallback(() => setLoginOpen(true), []);
+  const closeLogin = useCallback(() => setLoginOpen(false), []);
+
   const avatar = me?.image ?? (me?.email ? gravatarUrl(me.email) : undefined);
   const handle = me?.handle ?? me?.displayName ?? "user";
   const initial = (me?.displayName ?? me?.name ?? handle).charAt(0).toUpperCase();
   const isStaff = isModerator(me);
-  const { error: authError, clear: clearAuthError } = useAuthError();
-  const signInRedirectTo = getCurrentRelativeUrl();
 
   const setTheme = (next: "system" | "light" | "dark") => {
     startThemeTransition({
@@ -280,49 +281,28 @@ export default function Header() {
                   <Link to="/settings">Settings</Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => void signOut()}>Sign out</DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    // Clear dev mode auth
+                    localStorage.removeItem("userId");
+                    void signOut();
+                  }}
+                >
+                  Sign out
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
             <>
-              {authError ? (
-                <div className="error" role="alert" style={{ fontSize: "0.85rem", marginRight: 8 }}>
-                  {authError}{" "}
-                  <button
-                    type="button"
-                    onClick={clearAuthError}
-                    aria-label="Dismiss"
-                    style={{
-                      background: "none",
-                      border: "none",
-                      cursor: "pointer",
-                      color: "inherit",
-                      padding: "0 2px",
-                    }}
-                  >
-                    &times;
-                  </button>
-                </div>
-              ) : null}
               <button
                 className="btn btn-primary"
                 type="button"
                 disabled={isLoading}
-                onClick={() => {
-                  clearAuthError();
-                  void signIn(
-                    "github",
-                    signInRedirectTo ? { redirectTo: signInRedirectTo } : undefined,
-                  ).catch((error) => {
-                    setAuthError(
-                      getUserFacingConvexError(error, "Sign in failed. Please try again."),
-                    );
-                  });
-                }}
+                onClick={openLogin}
               >
-                <span className="sign-in-label">Sign in</span>
-                <span className="sign-in-provider">with GitHub</span>
+                Sign in
               </button>
+              <LoginDialog open={loginOpen} onClose={closeLogin} />
             </>
           )}
         </div>
@@ -331,7 +311,3 @@ export default function Header() {
   );
 }
 
-function getCurrentRelativeUrl() {
-  if (typeof window === "undefined") return "/";
-  return `${window.location.pathname}${window.location.search}${window.location.hash}`;
-}
