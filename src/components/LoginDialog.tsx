@@ -12,7 +12,8 @@ interface LoginDialogProps {
 }
 
 export function LoginDialog({ open, onClose }: LoginDialogProps) {
-  const simpleSignIn = useMutation(api.simpleAuth.simpleSignIn);
+  const registerUser = useMutation(api.simpleAuth.registerUser);
+  const loginUser = useMutation(api.simpleAuth.loginUser);
   const [flow, setFlow] = useState<Flow>("signIn");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -73,18 +74,28 @@ export function LoginDialog({ open, onClose }: LoginDialogProps) {
     setLoading(true);
 
     try {
-      // Call simpleSignIn mutation - works for both signup and signin
-      const result = await simpleSignIn({
-        email,
-        password,
-        name: flow === "signUp" ? name : undefined,
-      });
+      let result;
+
+      if (flow === "signUp") {
+        // Registration flow
+        result = await registerUser({
+          email,
+          password,
+          name,
+        });
+      } else {
+        // Login flow
+        result = await loginUser({
+          email,
+          password,
+        });
+      }
 
       // Success - close dialog
       resetForm();
       onClose();
 
-      // Store user ID in localStorage for now (dev mode)
+      // Store user ID in localStorage for dev mode auth
       if (result?.userId) {
         localStorage.setItem("userId", result.userId);
       }

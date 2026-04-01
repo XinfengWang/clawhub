@@ -1,26 +1,21 @@
-import { useConvexAuth, useQuery } from "convex/react";
 import { useEffect, useState } from "react";
-import { api } from "../../convex/_generated/api";
-import type { Doc } from "../../convex/_generated/dataModel";
 
 export function useAuthStatus() {
-  const auth = useConvexAuth();
-  const me = useQuery(api.users.me) as Doc<"users"> | null | undefined;
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // In dev mode, check localStorage for userId to determine auth status
+  // Check localStorage for userId on mount
   useEffect(() => {
-    const userId = localStorage.getItem("userId");
-    if (userId) {
-      setIsAuthenticated(true);
-    } else {
-      setIsAuthenticated(false);
-    }
-  }, [me]);
+    const storedUserId = localStorage.getItem("userId");
+    setIsAuthenticated(!!storedUserId);
+  }, []);
 
+  // Return auth status based on localStorage
+  // me is null since we're not using Convex Auth anymore,
+  // but header will still show user info from localStorage
   return {
-    me,
-    isLoading: auth.isLoading,
-    isAuthenticated: isAuthenticated || auth.isAuthenticated,
+    me: null,
+    isLoading,
+    isAuthenticated,
   };
 }

@@ -1,12 +1,10 @@
-import { useAuthActions } from "@convex-dev/auth/react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation } from "convex/react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../../../convex/_generated/api";
-import { getUserFacingConvexError } from "../../lib/convexError";
 import { getClawHubSiteUrl, normalizeClawHubSiteOrigin } from "../../lib/site";
-import { setAuthError, useAuthError } from "../../lib/useAuthError";
 import { useAuthStatus } from "../../lib/useAuthStatus";
+import { LoginDialog } from "../../components/LoginDialog";
 
 export const Route = createFileRoute("/cli/auth")({
   component: CliAuth,
@@ -14,9 +12,10 @@ export const Route = createFileRoute("/cli/auth")({
 
 function CliAuth() {
   const { isAuthenticated, isLoading, me } = useAuthStatus();
-  const { signIn } = useAuthActions();
-  const { error: authError, clear: clearAuthError } = useAuthError();
   const createToken = useMutation(api.tokens.create);
+  const [loginOpen, setLoginOpen] = useState(false);
+  const openLogin = useCallback(() => setLoginOpen(true), []);
+  const closeLogin = useCallback(() => setLoginOpen(false), []);
 
   const search = Route.useSearch() as {
     redirect_uri?: string;
@@ -32,7 +31,6 @@ function CliAuth() {
   const label =
     (decodeLabel(search.label_b64) ?? search.label ?? "CLI token").trim() || "CLI token";
   const state = typeof search.state === "string" ? search.state.trim() : "";
-  const signInRedirectTo = getCurrentRelativeUrl();
 
   const safeRedirect = useMemo(() => isAllowedRedirectUri(redirectUri), [redirectUri]);
   const registry = useMemo(() => {
@@ -108,41 +106,15 @@ function CliAuth() {
             CLI login
           </h1>
           <p className="section-subtitle">Sign in to create an API token for the CLI.</p>
-          {authError ? (
-            <p className="error" role="alert">
-              {authError}{" "}
-              <button
-                type="button"
-                onClick={clearAuthError}
-                aria-label="Dismiss"
-                style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  color: "inherit",
-                  padding: "0 2px",
-                }}
-              >
-                &times;
-              </button>
-            </p>
-          ) : null}
           <button
             className="btn btn-primary"
             type="button"
             disabled={isLoading}
-            onClick={() => {
-              clearAuthError();
-              void signIn(
-                "github",
-                signInRedirectTo ? { redirectTo: signInRedirectTo } : undefined,
-              ).catch((error) => {
-                setAuthError(getUserFacingConvexError(error, "Sign in failed. Please try again."));
-              });
-            }}
+            onClick={openLogin}
           >
-            Sign in with GitHub
+            Sign in
           </button>
+          <LoginDialog open={loginOpen} onClose={closeLogin} />
         </div>
       </main>
     );
@@ -196,7 +168,3 @@ function decodeLabel(value: string | undefined) {
   }
 }
 
-function getCurrentRelativeUrl() {
-  if (typeof window === "undefined") return "/";
-  return `${window.location.pathname}${window.location.search}${window.location.hash}`;
-}

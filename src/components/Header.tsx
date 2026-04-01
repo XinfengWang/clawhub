@@ -1,4 +1,3 @@
-import { useAuthActions } from "@convex-dev/auth/react";
 import { Link } from "@tanstack/react-router";
 import { Menu, Monitor, Moon, Sun } from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -20,7 +19,6 @@ import { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group";
 
 export default function Header() {
   const { isAuthenticated, isLoading, me } = useAuthStatus();
-  const { signOut } = useAuthActions();
   const { mode, setMode } = useThemeMode();
   const toggleRef = useRef<HTMLDivElement | null>(null);
   const siteMode = getSiteMode();
@@ -283,9 +281,10 @@ export default function Header() {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={() => {
-                    // Clear dev mode auth
+                    // Clear SQLite auth from localStorage
                     localStorage.removeItem("userId");
-                    void signOut();
+                    // Reload page to ensure clean auth state
+                    window.location.reload();
                   }}
                 >
                   Sign out

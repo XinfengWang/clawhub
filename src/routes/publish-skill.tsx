@@ -85,7 +85,13 @@ export function Upload() {
   const [status, setStatus] = useState<string | null>(null);
   const isSubmitting = status !== null;
   const [error, setError] = useState<string | null>(null);
-  const publisherMemberships = useQuery(api.publishers.listMine) as
+  // Get current user's publishers from localStorage userId
+  // Parse userId from localStorage since me is null now
+  const userIdFromStorage = typeof window !== "undefined" ? localStorage.getItem("userId") : null;
+  const publisherMemberships = useQuery(
+    userIdFromStorage ? api.publishers.listMineFromSqlite : null,
+    userIdFromStorage ? { userId: userIdFromStorage as any } : "skip",
+  ) as
     | Array<{
         publisher: {
           _id: string;
