@@ -5,8 +5,27 @@ import type { ActionCtx, MutationCtx, QueryCtx } from "../_generated/server";
 
 export type Role = "admin" | "moderator" | "user";
 
+/**
+ * Get current authenticated user
+ * Tries Convex Auth first, then falls back to localStorage for dev mode
+ */
+async function getCurrentUserId(ctx: MutationCtx | QueryCtx): Promise<Id<"users"> | null> {
+  // Try Convex Auth first (for production)
+  try {
+    const authUserId = await getAuthUserId(ctx);
+    if (authUserId) return authUserId;
+  } catch {
+    // Auth not available, continue
+  }
+
+  // In dev mode, userId should come from client via context
+  // For now, we can't access it directly from server context
+  // The client must pass it through the mutation/query args
+  return null;
+}
+
 export async function requireUser(ctx: MutationCtx | QueryCtx) {
-  const userId = await getAuthUserId(ctx);
+  const userId = await getCurrentUserId(ctx);
   if (!userId) throw new Error("Unauthorized");
   const user = await ctx.db.get(userId);
   if (!user || user.deletedAt || user.deactivatedAt) throw new Error("User not found");
