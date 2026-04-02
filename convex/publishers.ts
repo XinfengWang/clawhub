@@ -447,18 +447,22 @@ export const listMine = query({
 });
 
 /**
- * List publishers for current user using SQLite-based auth
- * This query is used by the new SQLite auth system instead of @convex-dev/auth
+ * List publishers for current user using localStorage-based auth
+ * This query is used by the new local auth system instead of @convex-dev/auth
  * Requires userId to be passed as a parameter (from localStorage in client)
  */
 export const listMineFromSqlite = query({
-  args: { userId: v.id("users") },
+  args: { userId: v.string() },
   handler: async (ctx, args) => {
-    const user = await ctx.db.get(args.userId);
+    // Convert string userId to proper ID type for database operations
+    // In dev mode, we trust the userId from localStorage
+    const userId = args.userId as Id<"users">;
+
+    const user = await ctx.db.get(userId);
     if (!user || user.deletedAt || user.deactivatedAt) return [];
     const memberships = await ctx.db
       .query("publisherMembers")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user", (q) => q.eq("userId", userId))
       .collect();
     const publishers = await Promise.all(
       memberships.map(async (membership) => {
