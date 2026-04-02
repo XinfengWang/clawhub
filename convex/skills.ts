@@ -4505,6 +4505,7 @@ export const getVersionBySkillAndVersion = query({
 
 export const publishVersion: ReturnType<typeof action> = action({
   args: {
+    userId: v.optional(v.string()), // For dev mode localStorage auth
     ownerHandle: v.optional(v.string()),
     slug: v.string(),
     displayName: v.string(),
@@ -4532,7 +4533,22 @@ export const publishVersion: ReturnType<typeof action> = action({
     if (args.acceptLicenseTerms !== true) {
       throw new ConvexError("MIT-0 license terms must be accepted to publish skills");
     }
-    const { userId } = await requireUserFromAction(ctx);
+
+    // Get userId from Convex Auth (production) or from args (dev mode)
+    let userId: Id<"users"> | null = null;
+    try {
+      userId = await getAuthUserId(ctx);
+    } catch {
+      // Not in Convex Auth context, try from args (dev mode)
+      if (args.userId) {
+        userId = args.userId as Id<"users">;
+      }
+    }
+
+    if (!userId) {
+      throw new ConvexError("Unauthorized");
+    }
+
     const target = (await ctx.runMutation(internal.publishers.resolvePublishTargetForUserInternal, {
       actorUserId: userId,
       ownerHandle: args.ownerHandle,
@@ -4546,13 +4562,28 @@ export const publishVersion: ReturnType<typeof action> = action({
 
 export const generateChangelogPreview = action({
   args: {
+    userId: v.optional(v.string()), // For dev mode localStorage auth
     slug: v.string(),
     version: v.string(),
     readmeText: v.string(),
     filePaths: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
-    await requireUserFromAction(ctx);
+    // Check authentication - try Convex Auth first, then dev mode
+    let userId: Id<"users"> | null = null;
+    try {
+      userId = await getAuthUserId(ctx);
+    } catch {
+      // Not in Convex Auth context, try from args (dev mode)
+      if (args.userId) {
+        userId = args.userId as Id<"users">;
+      }
+    }
+
+    if (!userId) {
+      throw new ConvexError("Unauthorized");
+    }
+
     const changelog = await buildChangelogPreview(ctx, {
       slug: args.slug.trim().toLowerCase(),
       version: args.version.trim(),

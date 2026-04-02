@@ -234,6 +234,7 @@ export function Upload() {
       .then((text) => {
         if (changelogRequestRef.current !== requestId) return null;
         return generateChangelogPreview({
+          userId: userIdFromStorage || undefined,
           slug: trimmedSlug,
           version,
           readmeText: text.slice(0, 20_000),
@@ -409,7 +410,9 @@ export function Upload() {
 
     setStatus("Publishing…");
     try {
+      // Pass userId for dev mode localStorage auth
       const result = await publishVersion({
+        userId: userIdFromStorage || undefined,
         ownerHandle: isSoulMode ? undefined : ownerHandle || undefined,
         slug: trimmedSlug,
         displayName: trimmedName,

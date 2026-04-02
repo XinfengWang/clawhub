@@ -35,8 +35,25 @@ export async function requireUser(ctx: MutationCtx | QueryCtx) {
 export async function requireUserFromAction(
   ctx: ActionCtx,
 ): Promise<{ userId: Id<"users">; user: Doc<"users"> }> {
-  const userId = await getAuthUserId(ctx);
-  if (!userId) throw new Error("Unauthorized");
+  // In dev mode with localStorage auth, Convex Auth is not available
+  // This function is called by actions that need user info
+  // Since we can't access localStorage from action, we need to allow this in dev mode
+  let userId: Id<"users"> | null = null;
+
+  // Try Convex Auth first (for production)
+  try {
+    userId = await getAuthUserId(ctx);
+  } catch {
+    // Auth not available, continue
+  }
+
+  if (!userId) {
+    // In dev mode, throw error gracefully
+    // The client should ideally pass userId via action args, but for compatibility
+    // we allow this to fail and the calling code should handle it
+    throw new Error("Unauthorized");
+  }
+
   const user = await ctx.runQuery(internal.users.getByIdInternal, { userId });
   if (!user || user.deletedAt || user.deactivatedAt) throw new Error("User not found");
   return { userId, user: user as Doc<"users"> };
