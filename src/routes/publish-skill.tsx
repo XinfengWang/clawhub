@@ -167,7 +167,7 @@ export function Upload() {
   const slugAvailability = useQuery(
     api.skills.checkSlugAvailability,
     !isSoulMode && isAuthenticated && trimmedSlug && SLUG_PATTERN.test(trimmedSlug)
-      ? { slug: trimmedSlug.toLowerCase() }
+      ? { slug: trimmedSlug.toLowerCase(), userId: userIdFromStorage || undefined }
       : "skip",
   ) as
     | {
@@ -391,7 +391,7 @@ export function Upload() {
     }>;
 
     for (const file of files) {
-      const uploadUrl = await generateUploadUrl();
+      const uploadUrl = await generateUploadUrl({ userId: userIdFromStorage ?? undefined });
       const rawPath = (file.webkitRelativePath || file.name).replace(/^\.\//, "");
       const path =
         stripRoot && rawPath.startsWith(`${stripRoot}/`)
@@ -411,6 +411,7 @@ export function Upload() {
     setStatus("Publishing…");
     try {
       // Pass userId for dev mode localStorage auth
+      console.log("[publish-skill] userIdFromStorage:", userIdFromStorage);
       const result = await publishVersion({
         userId: userIdFromStorage || undefined,
         ownerHandle: isSoulMode ? undefined : ownerHandle || undefined,

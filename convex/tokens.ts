@@ -5,12 +5,22 @@ import { requireUser } from "./lib/access";
 import { generateToken, hashToken } from "./lib/tokens";
 
 export const listMine = query({
-  args: {},
-  handler: async (ctx) => {
-    const { userId } = await requireUser(ctx);
+  args: { userId: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    let userId: string;
+
+    // If userId provided (from dev mode localStorage auth), use it
+    if (args.userId) {
+      userId = args.userId;
+    } else {
+      // Otherwise use Convex Auth
+      const result = await requireUser(ctx);
+      userId = result.userId;
+    }
+
     const tokens = await ctx.db
       .query("apiTokens")
-      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .withIndex("by_user", (q) => q.eq("userId", userId as any))
       .order("desc")
       .take(100);
     return tokens.map((token) => ({

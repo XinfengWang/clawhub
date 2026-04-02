@@ -12,7 +12,7 @@ export function UserBootstrap() {
     if (isLoading || !isAuthenticated || didRun.current) return;
     didRun.current = true;
     void ensureUser();
-  }, [isAuthenticated, isLoading, ensureUser]);
+  }, [isAuthenticated, isLoading]);
 
   return null;
 }

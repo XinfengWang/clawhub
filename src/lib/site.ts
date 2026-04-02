@@ -2,10 +2,10 @@ export type SiteMode = "skills" | "souls";
 
 import { getRuntimeEnv } from "./runtimeEnv";
 
-const DEFAULT_CLAWHUB_SITE_URL = "https://clawhub.ai";
+const DEFAULT_CLAWHUB_SITE_URL = "https://learninghub.ai";
 const DEFAULT_ONLYCRABS_SITE_URL = "https://onlycrabs.ai";
 const DEFAULT_ONLYCRABS_HOST = "onlycrabs.ai";
-const LEGACY_CLAWDHUB_HOSTS = new Set(["clawdhub.com", "www.clawdhub.com", "auth.clawdhub.com"]);
+const LEGACY_CLAWDHUB_HOSTS = new Set(["learninghub.ai", "www.learninghub.ai", "auth.learninghub.ai"]);
 
 export function normalizeClawHubSiteOrigin(value?: string | null) {
   if (!value) return null;
@@ -86,13 +86,13 @@ export function getSiteMode(): SiteMode {
 }
 
 export function getSiteName(mode: SiteMode = getSiteMode()) {
-  return mode === "souls" ? "SoulHub" : "ClawHub";
+  return mode === "souls" ? "SoulHub" : "LearningHub";
 }
 
 export function getSiteDescription(mode: SiteMode = getSiteMode()) {
   return mode === "souls"
     ? "SoulHub — the home for SOUL.md bundles and personal system lore."
-    : "ClawHub — a fast skill registry for agents, with vector search.";
+    : "LearningHub — a fast skill registry for agents, with vector search.";
 }
 
 export function getSiteUrlForMode(mode: SiteMode = getSiteMode()) {

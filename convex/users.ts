@@ -293,9 +293,20 @@ export const updateProfile = mutation({
   args: {
     displayName: v.string(),
     bio: v.optional(v.string()),
+    userId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const { userId } = await requireUser(ctx);
+    let userId: Id<"users">;
+
+    // If userId provided (from dev mode localStorage auth), use it
+    if (args.userId) {
+      userId = args.userId as Id<"users">;
+    } else {
+      // Otherwise use Convex Auth
+      const result = await requireUser(ctx);
+      userId = result.userId;
+    }
+
     await ctx.db.patch(userId, {
       displayName: args.displayName.trim(),
       bio: args.bio?.trim(),
@@ -309,9 +320,18 @@ export const updateProfile = mutation({
 });
 
 export const deleteAccount = mutation({
-  args: {},
-  handler: async (ctx) => {
-    const { userId } = await requireUser(ctx);
+  args: { userId: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    let userId: Id<"users">;
+
+    // If userId provided (from dev mode localStorage auth), use it
+    if (args.userId) {
+      userId = args.userId as Id<"users">;
+    } else {
+      // Otherwise use Convex Auth
+      const result = await requireUser(ctx);
+      userId = result.userId;
+    }
     const now = Date.now();
 
     const tokens = await ctx.db

@@ -1,5 +1,5 @@
 {
-  "name": "clawhub",
+  "name": "learninghub",
   "private": true,
   "workspaces": [
     "packages/*"
@@ -44,7 +44,7 @@
     "@tanstack/react-start": "1.167.2",
     "@tanstack/router-plugin": "1.167.2",
     "@vercel/analytics": "^2.0.1",
-    "clawhub-schema": "workspace:*",
+    "learninghub-schema": "workspace:*",
     "clsx": "^2.1.1",
     "convex": "^1.34.0",
     "convex-helpers": "^0.1.114",

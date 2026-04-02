@@ -1,31 +1,60 @@
 import { v } from "convex/values";
+import type { Id } from "./_generated/dataModel";
 import { internalMutation, mutation, query } from "./functions";
 import { requireUser } from "./lib/access";
 import { toPublicSkill } from "./lib/public";
 import { insertStatEvent } from "./skillStatEvents";
 
 export const isStarred = query({
-  args: { skillId: v.id("skills") },
+  args: { skillId: v.id("skills"), userId: v.optional(v.string()) },
   handler: async (ctx, args) => {
-    const { userId } = await requireUser(ctx);
+    let userId: string | null = null;
+    try {
+      const result = await requireUser(ctx);
+      userId = result.userId;
+    } catch {
+      // Not in Convex Auth context, try from args (dev mode)
+      if (args.userId) {
+        userId = args.userId;
+      }
+    }
+
+    if (!userId) {
+      return false;
+    }
+
     const existing = await ctx.db
       .query("stars")
-      .withIndex("by_skill_user", (q) => q.eq("skillId", args.skillId).eq("userId", userId))
+      .withIndex("by_skill_user", (q) => q.eq("skillId", args.skillId).eq("userId", userId as Id<"users">))
       .unique();
     return Boolean(existing);
   },
 });
 
 export const toggle = mutation({
-  args: { skillId: v.id("skills") },
+  args: { skillId: v.id("skills"), userId: v.optional(v.string()) },
   handler: async (ctx, args) => {
-    const { userId } = await requireUser(ctx);
+    let userId: string | null = null;
+    try {
+      const result = await requireUser(ctx);
+      userId = result.userId;
+    } catch {
+      // Not in Convex Auth context, try from args (dev mode)
+      if (args.userId) {
+        userId = args.userId;
+      }
+    }
+
+    if (!userId) {
+      throw new Error("Unauthorized");
+    }
+
     const skill = await ctx.db.get(args.skillId);
     if (!skill) throw new Error("Skill not found");
 
     const existing = await ctx.db
       .query("stars")
-      .withIndex("by_skill_user", (q) => q.eq("skillId", args.skillId).eq("userId", userId))
+      .withIndex("by_skill_user", (q) => q.eq("skillId", args.skillId).eq("userId", userId as Id<"users">))
       .unique();
 
     if (existing) {
@@ -36,7 +65,7 @@ export const toggle = mutation({
 
     await ctx.db.insert("stars", {
       skillId: args.skillId,
-      userId,
+      userId: userId as Id<"users">,
       createdAt: Date.now(),
     });
 

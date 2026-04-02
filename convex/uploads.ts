@@ -4,21 +4,15 @@ import { requireUser } from "./lib/access";
 
 /**
  * Generate an upload URL for file storage
- * In dev mode with localStorage auth, we skip authentication here
+ * In dev mode with localStorage auth, we accept userId as optional parameter
  * since the file will be validated when publishing the skill
  */
 export const generateUploadUrl = mutation({
-  args: {},
-  handler: async (ctx) => {
-    // In dev mode, allow uploads without strict auth check
+  args: { userId: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    // In dev mode with localStorage auth, skip auth check
     // The publishVersion action will validate the user later
-    // Try to require user, but don't fail if auth not available
-    try {
-      await requireUser(ctx);
-    } catch {
-      // In dev mode with localStorage auth, we allow this
-      // The file will be validated when actually publishing
-    }
+    // Just generate and return the upload URL
     return ctx.storage.generateUploadUrl();
   },
 });

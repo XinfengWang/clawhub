@@ -7,7 +7,9 @@ import { getClawHubSiteUrl, getSiteMode, getSiteName } from "../lib/site";
 import { applyTheme, useThemeMode } from "../lib/theme";
 import { startThemeTransition } from "../lib/theme-transition";
 import { useAuthStatus } from "../lib/useAuthStatus";
+import { useLanguage } from "../lib/LanguageContext";
 import { LoginDialog } from "./LoginDialog";
+import { LanguageSwitcher } from "./LanguageSwitcher";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +22,7 @@ import { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group";
 export default function Header() {
   const { isAuthenticated, isLoading, me } = useAuthStatus();
   const { mode, setMode } = useThemeMode();
+  const { t } = useLanguage();
   const toggleRef = useRef<HTMLDivElement | null>(null);
   const siteMode = getSiteMode();
   const siteName = useMemo(() => getSiteName(siteMode), [siteMode]);
@@ -74,7 +77,7 @@ export default function Header() {
                 focus: undefined,
               }}
             >
-              Souls
+              {t('header.skills')}
             </Link>
           ) : (
             <Link
@@ -89,10 +92,9 @@ export default function Header() {
                 focus: undefined,
               }}
             >
-              Skills
+              {t('header.skills')}
             </Link>
           )}
-          {isSoulMode ? null : <Link to="/plugins">Plugins</Link>}
           <Link
             to={isSoulMode ? "/souls" : "/skills"}
             search={
@@ -117,7 +119,6 @@ export default function Header() {
           >
             Search
           </Link>
-          {isSoulMode ? null : <Link to="/about">About</Link>}
           {me ? <Link to="/stars">Stars</Link> : null}
           {isStaff ? (
             <Link to="/management" search={{ skill: undefined }}>
@@ -170,11 +171,6 @@ export default function Header() {
                     </Link>
                   )}
                 </DropdownMenuItem>
-                {isSoulMode ? null : (
-                  <DropdownMenuItem asChild>
-                    <Link to="/plugins">Plugins</Link>
-                  </DropdownMenuItem>
-                )}
                 <DropdownMenuItem asChild>
                   <Link
                     to={isSoulMode ? "/souls" : "/skills"}
@@ -198,14 +194,9 @@ export default function Header() {
                           }
                     }
                   >
-                    Search
+                    {t('header.search')}
                   </Link>
                 </DropdownMenuItem>
-                {isSoulMode ? null : (
-                  <DropdownMenuItem asChild>
-                    <Link to="/about">About</Link>
-                  </DropdownMenuItem>
-                )}
                 {me ? (
                   <DropdownMenuItem asChild>
                     <Link to="/stars">Stars</Link>
@@ -234,6 +225,7 @@ export default function Header() {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
+          <LanguageSwitcher />
           <div className="theme-toggle" ref={toggleRef}>
             <ToggleGroup
               type="single"
@@ -258,12 +250,12 @@ export default function Header() {
               </ToggleGroupItem>
             </ToggleGroup>
           </div>
-          {isAuthenticated && me ? (
+          {isAuthenticated ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="user-trigger" type="button">
                   {avatar ? (
-                    <img src={avatar} alt={me.displayName ?? me.name ?? "User avatar"} />
+                    <img src={avatar} alt={me?.displayName ?? me?.name ?? "User avatar"} />
                   ) : (
                     <span className="user-menu-fallback">{initial}</span>
                   )}
@@ -287,7 +279,7 @@ export default function Header() {
                     window.location.reload();
                   }}
                 >
-                  Sign out
+                  {t('header.signout')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -299,7 +291,7 @@ export default function Header() {
                 disabled={isLoading}
                 onClick={openLogin}
               >
-                Sign in
+                {t('header.signin')}
               </button>
               <LoginDialog open={loginOpen} onClose={closeLogin} />
             </>

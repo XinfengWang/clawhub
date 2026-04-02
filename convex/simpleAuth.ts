@@ -125,12 +125,22 @@ export const loginUser = mutation({
 });
 
 /**
- * Get current user from localStorage userId (dev mode)
+ * Get user by ID (for dev mode localStorage auth)
  */
-export const getCurrentUser = query({
-  args: {},
-  handler: async (ctx) => {
-    return null;
+export const getUserById = query({
+  args: { userId: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    if (!args.userId) return null;
+    const user = await ctx.db.get(args.userId as Id<"users">);
+    if (!user) return null;
+    return {
+      userId: user._id,
+      email: user.email,
+      name: user.name,
+      displayName: user.displayName,
+      avatarUrl: user.image,
+      handle: user.handle,
+    };
   },
 });
 

@@ -12,6 +12,7 @@ import { convexHttp } from "../convex/client";
 import { getSkillBadges } from "../lib/badges";
 import type { PublicPublisher, PublicSkill, PublicSoul } from "../lib/publicUser";
 import { getSiteMode } from "../lib/site";
+import { useLanguage } from "../lib/LanguageContext";
 
 export const Route = createFileRoute("/")({
   component: Home,
@@ -23,6 +24,7 @@ function Home() {
 }
 
 function SkillsHome() {
+  const { t } = useLanguage();
   type SkillPageEntry = {
     skill: PublicSkill;
     ownerHandle?: string | null;
@@ -62,15 +64,14 @@ function SkillsHome() {
       <section className="hero">
         <div className="hero-inner">
           <div className="hero-copy fade-up" data-delay="1">
-            <span className="hero-badge">Lobster-light. Agent-right.</span>
-            <h1 className="hero-title">ClawHub, the skill dock for sharp agents.</h1>
+            <span className="hero-badge">{t('hero.badge')}</span>
+            <h1 className="hero-title">{t('hero.title')}</h1>
             <p className="hero-subtitle">
-              Upload AgentSkills bundles, version them like npm, and make them searchable with
-              vectors. No gatekeeping, just signal.
+              {t('hero.subtitle')}
             </p>
             <div style={{ display: "flex", gap: 12, marginTop: 20 }}>
               <Link to="/publish-skill" search={{ updateSlug: undefined }} className="btn btn-primary">
-                Publish Skill
+                {t('hero.publishSkill')}
               </Link>
               <Link
                 to="/skills"
@@ -85,13 +86,13 @@ function SkillsHome() {
                 }}
                 className="btn"
               >
-                Browse skills
+                {t('hero.browseSkills')}
               </Link>
             </div>
           </div>
           <div className="hero-card hero-search-card fade-up" data-delay="2">
             <div className="hero-install" style={{ marginTop: 18 }}>
-              <div className="stat">Search skills. Versioned, rollback-ready.</div>
+              <div className="stat">{t('hero.install')}</div>
               <InstallSwitcher exampleSlug="sonoscli" />
             </div>
           </div>
@@ -99,11 +100,11 @@ function SkillsHome() {
       </section>
 
       <section className="section">
-        <h2 className="section-title">Highlighted skills</h2>
-        <p className="section-subtitle">Curated signal — highlighted for quick trust.</p>
+        <h2 className="section-title">{t('section.highlighted')}</h2>
+        <p className="section-subtitle">{t('section.highlightedDesc')}</p>
         <div className="grid">
           {highlighted.length === 0 ? (
-            <div className="card">No highlighted skills yet.</div>
+            <div className="card">{t('section.noSkillsYet')}</div>
           ) : (
             highlighted.map((entry) => (
               <SkillCard
@@ -131,11 +132,11 @@ function SkillsHome() {
       </section>
 
       <section className="section">
-        <h2 className="section-title">Popular skills</h2>
-        <p className="section-subtitle">Most-downloaded, non-suspicious picks.</p>
+        <h2 className="section-title">{t('section.popular')}</h2>
+        <p className="section-subtitle">{t('section.popularDesc')}</p>
         <div className="grid">
           {popular.length === 0 ? (
-            <div className="card">No skills yet. Be the first.</div>
+            <div className="card">{t('section.noSkillsYet')}</div>
           ) : (
             popular.map((entry) => (
               <SkillCard
@@ -173,7 +174,7 @@ function SkillsHome() {
             }}
             className="btn"
           >
-            See all skills
+            {t('section.seeAll')}
           </Link>
         </div>
       </section>

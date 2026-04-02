@@ -1505,9 +1505,18 @@ export const getBySlug = query({
 });
 
 export const checkSlugAvailability = query({
-  args: { slug: v.string() },
+  args: { slug: v.string(), userId: v.optional(v.string()) },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
+    let userId: Id<"users"> | null = null;
+    try {
+      userId = await getAuthUserId(ctx);
+    } catch {
+      // Not in Convex Auth context
+    }
+    // For dev mode localStorage auth, accept userId from args
+    if (!userId && args.userId) {
+      userId = args.userId as Id<"users">;
+    }
     const slug = normalizeSkillSlugKey(args.slug);
     if (!slug) {
       return {
@@ -4536,13 +4545,20 @@ export const publishVersion: ReturnType<typeof action> = action({
 
     // Get userId from Convex Auth (production) or from args (dev mode)
     let userId: Id<"users"> | null = null;
+    let isDevMode = false;
     try {
-      userId = await getAuthUserId(ctx);
-    } catch {
-      // Not in Convex Auth context, try from args (dev mode)
-      if (args.userId) {
-        userId = args.userId as Id<"users">;
+      const authUserId = await getAuthUserId(ctx);
+      if (authUserId) {
+        userId = authUserId;
       }
+    } catch (err) {
+      // Not in Convex Auth context, continue
+    }
+
+    // If no userId from Convex Auth, try from args (dev mode)
+    if (!userId && args.userId) {
+      userId = args.userId as Id<"users">;
+      isDevMode = true;
     }
 
     if (!userId) {
@@ -4556,6 +4572,7 @@ export const publishVersion: ReturnType<typeof action> = action({
     })) as { publisherId: Id<"publishers"> };
     return publishVersionForUser(ctx, userId, args, {
       ownerPublisherId: target.publisherId,
+      bypassGitHubAccountAge: isDevMode,
     });
   },
 });
@@ -4572,12 +4589,17 @@ export const generateChangelogPreview = action({
     // Check authentication - try Convex Auth first, then dev mode
     let userId: Id<"users"> | null = null;
     try {
-      userId = await getAuthUserId(ctx);
-    } catch {
-      // Not in Convex Auth context, try from args (dev mode)
-      if (args.userId) {
-        userId = args.userId as Id<"users">;
+      const authUserId = await getAuthUserId(ctx);
+      if (authUserId) {
+        userId = authUserId;
       }
+    } catch {
+      // Not in Convex Auth context, continue
+    }
+
+    // If no userId from Convex Auth, try from args (dev mode)
+    if (!userId && args.userId) {
+      userId = args.userId as Id<"users">;
     }
 
     if (!userId) {
@@ -5848,7 +5870,9 @@ export const insertVersion = internalMutation({
       }
     }
 
-    if (skill && skill.ownerPublisherId && skill.ownerPublisherId !== ownerPublisherId) {
+    // Check if slug is taken by someone else (not a version update)
+    if (skill && skill.ownerUserId !== userId) {
+      // Different owner - slug is taken
       const owner = await getOwnerPublisher(ctx, {
         ownerPublisherId: skill.ownerPublisherId,
         ownerUserId: skill.ownerUserId,
@@ -5856,39 +5880,8 @@ export const insertVersion = internalMutation({
       throw new ConvexError(buildSlugTakenErrorMessage(skill, owner));
     }
 
-    if (skill && !skill.ownerPublisherId && skill.ownerUserId !== userId) {
-      // Fallback: Convex Auth can create duplicate `users` records. Heal ownership ONLY
-      // when the underlying GitHub identity matches (authAccounts.providerAccountId).
-      const owner = await getOwnerPublisher(ctx, {
-        ownerPublisherId: skill.ownerPublisherId,
-        ownerUserId: skill.ownerUserId,
-      });
-      const slugTakenMessage = buildSlugTakenErrorMessage(skill, owner);
-
-      // Check GitHub identity FIRST so ownership healing works even when the
-      // previous owner record is deleted/deactivated (e.g. duplicate Convex Auth
-      // user where the old record was later banned).
-      const [ownerProviderAccountId, callerProviderAccountId] = await Promise.all([
-        getGitHubProviderAccountId(ctx, skill.ownerUserId),
-        getGitHubProviderAccountId(ctx, userId),
-      ]);
-
-      if (
-        canHealSkillOwnershipByGitHubProviderAccountId(
-          ownerProviderAccountId,
-          callerProviderAccountId,
-        )
-      ) {
-        await ctx.db.patch(skill._id, {
-          ownerUserId: userId,
-          ownerPublisherId,
-          updatedAt: now,
-        });
-        skill = { ...skill, ownerUserId: userId, ownerPublisherId };
-      } else {
-        throw new ConvexError(slugTakenMessage);
-      }
-    } else if (skill && !skill.ownerPublisherId) {
+    // Same owner - update ownerPublisherId if needed
+    if (skill && !skill.ownerPublisherId) {
       await ctx.db.patch(skill._id, {
         ownerPublisherId,
         updatedAt: now,

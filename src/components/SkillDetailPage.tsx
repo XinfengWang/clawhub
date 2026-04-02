@@ -117,9 +117,10 @@ export function SkillDetailPage({
     shouldLoadDiffVersions && skill ? { skillId: skill._id, limit: 200 } : "skip",
   ) as Doc<"skillVersions">[] | undefined;
 
+  const userIdFromStorage = typeof window !== "undefined" ? localStorage.getItem("userId") : null;
   const isStarred = useQuery(
     api.stars.isStarred,
-    isAuthenticated && skill ? { skillId: skill._id } : "skip",
+    isAuthenticated && skill ? { skillId: skill._id, userId: userIdFromStorage ?? undefined } : "skip",
   );
 
   const myPublisherIds = useMemo(
@@ -358,7 +359,7 @@ export function SkillDetailPage({
           isAuthenticated={isAuthenticated}
           isStaff={isStaff}
           isStarred={isStarred}
-          onToggleStar={() => void toggleStar({ skillId: skill._id })}
+          onToggleStar={() => void toggleStar({ skillId: skill._id, userId: userIdFromStorage ?? undefined })}
           onOpenReport={openReportDialog}
           forkOf={forkOf}
           forkOfLabel={forkOfLabel}

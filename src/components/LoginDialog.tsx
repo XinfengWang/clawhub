@@ -3,6 +3,7 @@ import { api } from "../../convex/_generated/api";
 import { X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getUserFacingConvexError } from "../lib/convexError";
+import { useLanguage } from "../lib/LanguageContext";
 
 type Flow = "signIn" | "signUp";
 
@@ -12,6 +13,7 @@ interface LoginDialogProps {
 }
 
 export function LoginDialog({ open, onClose }: LoginDialogProps) {
+  const { t } = useLanguage();
   const registerUser = useMutation(api.simpleAuth.registerUser);
   const loginUser = useMutation(api.simpleAuth.loginUser);
   const [flow, setFlow] = useState<Flow>("signIn");
@@ -91,14 +93,16 @@ export function LoginDialog({ open, onClose }: LoginDialogProps) {
         });
       }
 
-      // Success - close dialog
-      resetForm();
-      onClose();
-
       // Store user ID in localStorage for dev mode auth
       if (result?.userId) {
         localStorage.setItem("userId", result.userId);
+        // Reload page to update auth state
+        window.location.reload();
       }
+
+      // Success - close dialog
+      resetForm();
+      onClose();
     } catch (err) {
       const message = getUserFacingConvexError(
         err,
@@ -121,7 +125,7 @@ export function LoginDialog({ open, onClose }: LoginDialogProps) {
     <dialog ref={dialogRef} className="login-dialog" onClick={handleBackdropClick}>
       <div className="login-dialog-content">
         <div className="login-dialog-header">
-          <h2>{flow === "signIn" ? "Sign In" : "Create Account"}</h2>
+          <h2>{flow === "signIn" ? t('login.signIn') : t('login.createAccount')}</h2>
           <button
             className="login-dialog-close"
             type="button"
@@ -135,40 +139,40 @@ export function LoginDialog({ open, onClose }: LoginDialogProps) {
         <form onSubmit={handleSubmit} className="login-dialog-form">
           {flow === "signUp" && (
             <div className="login-field">
-              <label htmlFor="login-name">Display Name</label>
+              <label htmlFor="login-name">{t('login.displayName')}</label>
               <input
                 id="login-name"
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Your name (optional)"
+                placeholder={t('login.displayNamePlaceholder')}
                 autoComplete="name"
               />
             </div>
           )}
 
           <div className="login-field">
-            <label htmlFor="login-email">Email</label>
+            <label htmlFor="login-email">{t('login.email')}</label>
             <input
               ref={emailRef}
               id="login-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
+              placeholder={t('login.emailPlaceholder')}
               required
               autoComplete="email"
             />
           </div>
 
           <div className="login-field">
-            <label htmlFor="login-password">Password</label>
+            <label htmlFor="login-password">{t('login.password')}</label>
             <input
               id="login-password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder={flow === "signUp" ? "At least 8 characters" : "Your password"}
+              placeholder={flow === "signUp" ? "At least 8 characters" : t('login.passwordPlaceholder')}
               required
               minLength={flow === "signUp" ? 8 : undefined}
               autoComplete={flow === "signIn" ? "current-password" : "new-password"}
@@ -183,26 +187,26 @@ export function LoginDialog({ open, onClose }: LoginDialogProps) {
 
           <button className="btn btn-primary login-submit" type="submit" disabled={loading}>
             {loading
-              ? "Please wait..."
+              ? t('common.loading')
               : flow === "signIn"
-                ? "Sign In"
-                : "Create Account"}
+                ? t('login.signInBtn')
+                : t('login.signUpBtn')}
           </button>
         </form>
 
         <div className="login-dialog-footer">
           {flow === "signIn" ? (
             <p>
-              Don&apos;t have an account?{" "}
+              {t('login.dontHaveAccount')}{" "}
               <button type="button" className="login-switch" onClick={() => switchFlow("signUp")}>
-                Sign up
+                {t('login.signUpLink')}
               </button>
             </p>
           ) : (
             <p>
-              Already have an account?{" "}
+              {t('login.haveAccount')}{" "}
               <button type="button" className="login-switch" onClick={() => switchFlow("signIn")}>
-                Sign in
+                {t('login.signInLink')}
               </button>
             </p>
           )}

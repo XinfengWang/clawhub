@@ -19,6 +19,7 @@ import type { Doc } from "../../convex/_generated/dataModel";
 import { formatCompactStat } from "../lib/numberFormat";
 import { familyLabel } from "../lib/packageLabels";
 import type { PublicSkill } from "../lib/publicUser";
+import { useAuthStatus } from "../lib/useAuthStatus";
 
 const emptyPluginPublishSearch = {
   ownerHandle: undefined,
@@ -67,8 +68,11 @@ export const Route = createFileRoute("/dashboard")({
 });
 
 function Dashboard() {
-  const me = useQuery(api.users.me) as Doc<"users"> | null | undefined;
-  const publishers = useQuery(api.publishers.listMine) as
+  const { me, isAuthenticated } = useAuthStatus();
+  const publishers = useQuery(
+    api.publishers.listMineFromSqlite,
+    me ? { userId: me.userId } : "skip"
+  ) as
     | Array<{
         publisher: {
           _id: string;
@@ -85,21 +89,17 @@ function Dashboard() {
 
   const mySkills = useQuery(
     api.skills.list,
-    selectedPublisher?.publisher.kind === "user" && me?._id
-      ? { ownerUserId: me._id, limit: 100 }
+    me && (selectedPublisher?.publisher.kind === "user"
+      ? { ownerUserId: me.userId as Doc<"users">["_id"], limit: 100 }
       : selectedPublisherId
         ? { ownerPublisherId: selectedPublisherId as Doc<"publishers">["_id"], limit: 100 }
-        : me?._id
-          ? { ownerUserId: me._id, limit: 100 }
-          : "skip",
+        : { ownerUserId: me.userId as Doc<"users">["_id"], limit: 100 }),
   ) as DashboardSkill[] | undefined;
   const myPackages = useQuery(
     api.packages.list,
-    selectedPublisherId
+    me && (selectedPublisherId
       ? { ownerPublisherId: selectedPublisherId as Doc<"publishers">["_id"], limit: 100 }
-      : me?._id
-        ? { ownerUserId: me._id, limit: 100 }
-        : "skip",
+      : { ownerUserId: me.userId as Doc<"users">["_id"], limit: 100 }),
   ) as DashboardPackage[] | undefined;
 
   useEffect(() => {
@@ -121,7 +121,7 @@ function Dashboard() {
   const skills = mySkills ?? [];
   const packages = myPackages ?? [];
   const ownerHandle =
-    selectedPublisher?.publisher.handle ?? me.handle ?? me.name ?? me.displayName ?? me._id;
+    selectedPublisher?.publisher.handle ?? me.handle ?? me.name ?? me.displayName ?? me.userId;
 
   return (
     <main className="section">

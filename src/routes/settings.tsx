@@ -4,16 +4,20 @@ import { useEffect, useState } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { gravatarUrl } from "../lib/gravatar";
+import { useAuthStatus } from "../lib/useAuthStatus";
 
 export const Route = createFileRoute("/settings")({
   component: Settings,
 });
 
 export function Settings() {
-  const me = useQuery(api.users.me);
+  const { me, isAuthenticated } = useAuthStatus();
   const updateProfile = useMutation(api.users.updateProfile);
   const deleteAccount = useMutation(api.users.deleteAccount);
-  const tokens = useQuery(api.tokens.listMine, me ? {} : "skip") as
+  const tokens = useQuery(
+    api.tokens.listMine,
+    me ? { userId: me.userId } : "skip"
+  ) as
     | Array<{
         _id: Id<"apiTokens">;
         label: string;
@@ -25,7 +29,10 @@ export function Settings() {
     | undefined;
   const createToken = useMutation(api.tokens.create);
   const revokeToken = useMutation(api.tokens.revoke);
-  const publisherMemberships = useQuery(api.publishers.listMine) as
+  const publisherMemberships = useQuery(
+    api.publishers.listMineFromSqlite,
+    me ? { userId: me.userId } : "skip"
+  ) as
     | Array<{
         publisher: {
           _id: Id<"publishers">;
@@ -98,7 +105,7 @@ export function Settings() {
 
   async function onSave(event: React.FormEvent) {
     event.preventDefault();
-    await updateProfile({ displayName, bio });
+    await updateProfile({ displayName, bio, userId: me?.userId });
     setStatus("Saved.");
   }
 
@@ -108,7 +115,7 @@ export function Settings() {
         "Published skills will remain public.",
     );
     if (!ok) return;
-    await deleteAccount();
+    await deleteAccount({ userId: me?.userId });
   }
 
   async function onCreateToken() {

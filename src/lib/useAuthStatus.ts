@@ -1,21 +1,24 @@
+import { useQuery } from "convex/react";
 import { useEffect, useState } from "react";
+import { api } from "../../convex/_generated/api";
 
 export function useAuthStatus() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Check localStorage for userId on mount
   useEffect(() => {
     const storedUserId = localStorage.getItem("userId");
-    setIsAuthenticated(!!storedUserId);
+    setUserId(storedUserId);
+    setIsLoading(false);
   }, []);
 
-  // Return auth status based on localStorage
-  // me is null since we're not using Convex Auth anymore,
-  // but header will still show user info from localStorage
+  // Fetch user data (query handles null/undefined userId gracefully)
+  const userQuery = useQuery(api.simpleAuth.getUserById, { userId: userId || undefined });
+
   return {
-    me: null,
-    isLoading,
-    isAuthenticated,
+    me: userQuery,
+    isLoading: isLoading || (userId && userQuery === undefined),
+    isAuthenticated: !!userId,
   };
 }
