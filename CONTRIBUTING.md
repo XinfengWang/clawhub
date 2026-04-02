@@ -10,13 +10,15 @@ Welcome! ClawHub is the public skill registry for [OpenClaw](https://github.com/
 
 ### Prerequisites
 
-- [Bun](https://bun.sh/) (Convex CLI runs via `bunx`, no global install needed)
-- [Node.js](https://nodejs.org/) v18, 20, 22, or 24 (required by the local Convex backend; v25+ is not yet supported)
+- [Node.js](https://nodejs.org/) v20+ (LTS 推荐; v25+ 暂未支持)
+- npm 9+ 或 pnpm 9.0.0+
 
 ### Install and configure
 
 ```bash
-bun install
+pnpm install
+# 或使用 npm: npm install
+
 cp .env.local.example .env.local
 ```
 
@@ -28,7 +30,7 @@ VITE_CONVEX_URL=http://127.0.0.1:3210
 VITE_CONVEX_SITE_URL=http://127.0.0.1:3210
 SITE_URL=http://localhost:3000
 
-# Deployment used by `bunx convex dev`
+# Deployment used by `npx convex dev`
 CONVEX_DEPLOYMENT=anonymous:anonymous-clawhub
 ```
 
@@ -44,7 +46,7 @@ CONVEX_DEPLOYMENT=anonymous:anonymous-clawhub
 Start the local Convex backend first — other setup steps depend on it:
 
 ```bash
-bunx convex dev --typecheck=disable
+npx convex dev --typecheck=disable
 ```
 
 ### Set backend environment variables
@@ -52,9 +54,9 @@ bunx convex dev --typecheck=disable
 The Convex backend has its own env var store separate from `.env.local`. With the backend running, open a new terminal and set the required variables:
 
 ```bash
-bunx convex env set AUTH_GITHUB_ID <your-client-id>
-bunx convex env set AUTH_GITHUB_SECRET <your-client-secret>
-bunx convex env set SITE_URL http://localhost:3000
+npx convex env set AUTH_GITHUB_ID <your-client-id>
+npx convex env set AUTH_GITHUB_SECRET <your-client-secret>
+npx convex env set SITE_URL http://localhost:3000
 ```
 
 ### JWT keys (for Convex Auth)
@@ -62,7 +64,7 @@ bunx convex env set SITE_URL http://localhost:3000
 With the backend still running, generate the signing keys:
 
 ```bash
-bunx @convex-dev/auth
+npx @convex-dev/auth
 ```
 
 This sets `JWT_PRIVATE_KEY` and `JWKS` on the Convex backend and outputs values you can also save to `.env.local` for reference.
@@ -70,10 +72,11 @@ This sets `JWT_PRIVATE_KEY` and `JWKS` on the Convex backend and outputs values 
 ### Run the frontend
 
 ```bash
-bun run dev -- --port 3000
+pnpm run dev -- --port 3000
+# 或使用 npm: npm run dev -- --port 3000
 ```
 
-Change the port if 3000 is already in use, and update `SITE_URL` in both `.env.local` and the Convex backend (`bunx convex env set SITE_URL ...`) to match.
+Change the port if 3000 is already in use, and update `SITE_URL` in both `.env.local` and the Convex backend (`npx convex env set SITE_URL ...`) to match.
 
 ### Seed the database
 
@@ -81,19 +84,19 @@ Populate sample data so the UI isn't empty:
 
 ```bash
 # 3 sample skills (padel, gohome, xuezh)
-bunx convex run --no-push devSeed:seedNixSkills
+npx convex run --no-push devSeed:seedNixSkills
 
 # 50 extra skills for pagination testing (optional)
-bunx convex run --no-push devSeedExtra:seedExtraSkillsInternal
+npx convex run --no-push devSeedExtra:seedExtraSkillsInternal
 
 # Refresh the cached skills count (required after seeding)
-bunx convex run --no-push statsMaintenance:updateGlobalStatsInternal
+npx convex run --no-push statsMaintenance:updateGlobalStatsInternal
 ```
 
 To reset and re-seed:
 
 ```bash
-bunx convex run --no-push devSeed:seedNixSkills '{"reset": true}'
+npx convex run --no-push devSeed:seedNixSkills '{"reset": true}'
 ```
 
 ### Optional environment variables
@@ -145,10 +148,16 @@ clawhub publish <path-to-skill-directory>
 ## Before Submitting a PR
 
 ```bash
-bun run lint       # oxlint
-bun run test       # Vitest (80% coverage threshold)
-bun run build      # Vite + Nitro
-bun run --cwd packages/clawdhub verify
+pnpm run lint       # oxlint
+pnpm run test       # Vitest (80% coverage threshold)
+pnpm run build      # Vite + Nitro
+pnpm run --cwd packages/clawdhub verify
+
+# 或使用 npm
+npm run lint
+npm run test
+npm run build
+npm run --cwd packages/clawdhub verify
 ```
 
 These are the same checks that run in CI (`.github/workflows/ci.yml`).

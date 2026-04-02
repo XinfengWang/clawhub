@@ -4,7 +4,7 @@
 
 - **前端框架**: TanStack Start (React 19 + SSR)
 - **后端服务**: Convex (云数据库)
-- **包管理器**: Bun
+- **包管理器**: npm + pnpm
 - **构建工具**: Vite
 - **部署方式**: Node.js 应用
 
@@ -13,8 +13,9 @@
 ### 云服务器最低配置
 
 - **OS**: Ubuntu 20.04+ / CentOS 8+ / Debian 11+
-- **Node.js**: v18+ (建议 v20+)
-- **Bun**: 最新版本 (或使用 npm/yarn)
+- **Node.js**: v20+ (LTS 推荐)
+- **npm**: v9+ (随 Node.js 提供)
+- **pnpm**: v9.0.0+ (可选但推荐)
 - **内存**: 2GB 最低 (4GB+ 建议)
 - **磁盘**: 10GB+ 自由空间
 
@@ -26,31 +27,30 @@
 # 更新系统包
 sudo apt update && sudo apt upgrade -y
 
-# 安装 Node.js (以 Ubuntu 为例)
+# 安装 Node.js 20 LTS (以 Ubuntu 为例)
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt install -y nodejs
 
-# 安装 Bun (可选，但项目推荐使用)
-curl -fsSL https://bun.sh/install | bash
-export BUN_INSTALL="$HOME/.bun"
-export PATH="$BUN_INSTALL/bin:$PATH"
+# 安装 pnpm (推荐，npm 会自动提供)
+npm install -g pnpm@9.0.0
 
 # 验证安装
-node --version
-bun --version
+node --version    # 应显示 v20.x.x 或更高
+npm --version     # 应显示 v9.x.x 或更高
+pnpm --version    # 应显示 v9.0.0 或更高
 ```
 
 ### 第2步：克隆项目并安装依赖
 
 ```bash
 # 克隆项目
-git clone <your-repository-url> clawhub
+git clone https://github.com/XinfengWang/clawhub.git
 cd clawhub
 
-# 安装依赖 (使用 Bun)
-bun install
+# 使用 pnpm 安装依赖 (推荐)
+pnpm install
 
-# 或使用 npm (如果未安装 Bun)
+# 或使用 npm 安装
 npm install
 ```
 
@@ -98,13 +98,13 @@ npx convex deploy --prod
 ### 第5步：构建前端
 
 ```bash
-# 使用 Bun 构建
-bun run build
+# 使用 pnpm 构建 (推荐)
+pnpm run build
 
-# 或使用 npm
+# 或使用 npm 构建
 npm run build
 
-# 构建输出将在 dist/ 目录中
+# 构建输出将在 .output/ 目录中 (或 dist/ 目录)
 ```
 
 ### 第6步：启动应用
@@ -112,10 +112,10 @@ npm run build
 #### 选项 A: 直接运行 (开发/测试)
 
 ```bash
-# 使用 Bun
-bun run preview
+# 使用 pnpm 运行预览 (推荐)
+pnpm run preview
 
-# 或使用 npm
+# 或使用 npm 运行
 npm run preview
 ```
 
@@ -157,15 +157,15 @@ pm2 logs clawhub
 创建 `Dockerfile`:
 
 ```dockerfile
-FROM node:20-slim
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# 安装 Bun
-RUN npm install -g bun
+# 安装 pnpm
+RUN npm install -g pnpm@9.0.0
 
 # 复制项目文件
-COPY package.json bun.lockb ./
+COPY package.json pnpm-lock.yaml* ./
 COPY packages ./packages
 COPY src ./src
 COPY convex ./convex
@@ -174,16 +174,29 @@ COPY vite.config.ts tsconfig.json ./
 COPY scripts ./scripts
 
 # 安装依赖
-RUN bun install --frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 # 构建
-RUN bun run build
+RUN pnpm run build
+
+# 运行阶段
+FROM node:20-alpine
+
+WORKDIR /app
+
+# 安装 pnpm
+RUN npm install -g pnpm@9.0.0
+
+# 复制依赖和构建结果
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/.output ./.output
+COPY package.json ./
 
 # 暴露端口
 EXPOSE 3000
 
 # 启动
-CMD ["bun", "run", "preview"]
+CMD ["pnpm", "run", "preview"]
 ```
 
 构建和运行 Docker 镜像:
@@ -288,7 +301,7 @@ pm2 startup
 
 set -e
 
-echo "🚀 开始部署 ClawHub..."
+echo "🚀 开始部署 LearningHub..."
 
 # 1. 更新代码
 echo "📥 更新代码..."
@@ -296,11 +309,11 @@ git pull origin main
 
 # 2. 安装依赖
 echo "📦 安装依赖..."
-bun install
+pnpm install
 
 # 3. 构建
 echo "🔨 构建项目..."
-bun run build
+pnpm run build
 
 # 4. 部署后端
 echo "☁️  部署 Convex 后端..."
@@ -308,7 +321,7 @@ npx convex deploy --prod
 
 # 5. 重启应用
 echo "🔄 重启应用..."
-pm2 restart clawhub
+pm2 restart learninghub
 
 echo "✅ 部署完成！"
 ```
@@ -354,10 +367,10 @@ NODE_OPTIONS=--max_old_space_size=2048 pm2 start server.js
 
 ```bash
 # 清除缓存并重新安装
-rm -rf node_modules
-rm bun.lockb
-bun install
-bun run build
+rm -rf node_modules .output dist
+rm pnpm-lock.yaml
+pnpm install
+pnpm run build
 ```
 
 ### 问题：端口被占用
@@ -374,7 +387,19 @@ sudo kill -9 <PID>
 # 检查 .env.local 是否正确加载
 # 确保在构建前设置环境变量
 export VITE_CONVEX_URL=...
-bun run build
+pnpm run build
+```
+
+### 问题：pnpm 找不到
+
+```bash
+# 全局安装 pnpm
+npm install -g pnpm@9.0.0
+
+# 或使用 npm 代替 pnpm
+npm install
+npm run build
+npm run preview
 ```
 
 ## 性能监控

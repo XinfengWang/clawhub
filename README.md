@@ -97,21 +97,24 @@ Details: [`docs/telemetry.md`](docs/telemetry.md).
 
 ## Local dev
 
-Prereqs: [Bun](https://bun.sh/) (Convex runs via `bunx`, no global install needed).
+Prereqs: Node.js 20+, npm 9+, pnpm 9.0.0+ (or use npm only).
 
 ```bash
-bun install
+pnpm install
+# 或使用 npm: npm install
+
 cp .env.local.example .env.local
 # edit .env.local — see CONTRIBUTING.md for local Convex values
 
 # terminal A: local Convex backend
-bunx convex dev
+npx convex dev
 
 # terminal B: web app (port 3000)
-bun run dev
+pnpm run dev
+# 或使用 npm: npm run dev
 
 # seed sample data
-bunx convex run --no-push devSeed:seedNixSkills
+npx convex run --no-push devSeed:seedNixSkills
 ```
 
 For full setup instructions (env vars, GitHub OAuth, JWT keys, database seeding), see [CONTRIBUTING.md](CONTRIBUTING.md).
@@ -222,9 +225,16 @@ metadata:
 ## Scripts
 
 ```bash
-bun run dev
-bun run build
-bun run test
-bun run coverage
-bun run lint
+pnpm run dev       # 开发服务器
+pnpm run build     # 生产构建
+pnpm run test      # 运行测试
+pnpm run coverage  # 测试覆盖率
+pnpm run lint      # 代码检查
+
+# 或使用 npm
+npm run dev
+npm run build
+npm run test
+npm run coverage
+npm run lint
 ```

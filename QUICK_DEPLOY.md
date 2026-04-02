@@ -552,12 +552,11 @@ OPENAI_API_KEY=sk-...  # 可选
 
 ```bash
 # 检查构建大小
-du -sh dist/
-du -sh dist/client/
-du -sh dist/server/
+du -sh .output/
+du -sh dist/ 2>/dev/null || echo "dist 目录不存在"
 
 # 查看构建时间
-time bun run build
+time pnpm run build
 
 # 测试应用响应
 curl http://localhost:3000
