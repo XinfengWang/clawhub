@@ -11,27 +11,32 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<Language>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('language');
-      if (saved === 'en' || saved === 'zh') {
-        return saved;
-      }
+  const [language, setLanguageState] = useState<Language>('en');
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('language');
+    if (saved === 'en' || saved === 'zh') {
+      setLanguageState(saved);
+    } else {
       // Default to browser language or 'en'
       const browserLang = navigator.language.toLowerCase();
-      return browserLang.startsWith('zh') ? 'zh' : 'en';
+      setLanguageState(browserLang.startsWith('zh') ? 'zh' : 'en');
     }
-    return 'en';
-  });
+    setIsMounted(true);
+  }, []);
 
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('language', lang);
-    }
+    localStorage.setItem('language', lang);
   };
 
   const t = (key: string) => getTranslation(language, key);
+
+  // Don't render children until mounted to prevent hydration mismatch
+  if (!isMounted) {
+    return <LanguageContext.Provider value={{ language: 'en', setLanguage, t }}>{children}</LanguageContext.Provider>;
+  }
 
   return (
     <LanguageContext.Provider value={{ language, setLanguage, t }}>

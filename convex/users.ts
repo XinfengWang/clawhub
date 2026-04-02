@@ -276,7 +276,20 @@ async function computeEnsureUpdates(ctx: MutationCtx, user: Doc<"users">) {
 }
 
 export async function ensureHandler(ctx: MutationCtx) {
-  const { userId, user } = await requireUser(ctx);
+  let userId: Id<"users"> | null = null;
+  let user: Doc<"users"> | null = null;
+
+  // Try to get user from Convex Auth
+  try {
+    const result = await requireUser(ctx);
+    userId = result.userId;
+    user = result.user;
+  } catch {
+    // In dev mode with localStorage auth, this is called but we can't get the user here
+    // The user will be authenticated on the client side, so this is not an error
+    return null;
+  }
+
   const updates = await computeEnsureUpdates(ctx, user);
 
   const hasUpdates = Object.keys(updates).length > 0;

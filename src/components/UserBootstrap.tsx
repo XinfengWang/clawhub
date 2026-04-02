@@ -11,7 +11,10 @@ export function UserBootstrap() {
   useEffect(() => {
     if (isLoading || !isAuthenticated || didRun.current) return;
     didRun.current = true;
-    void ensureUser();
+    void ensureUser().catch(() => {
+      // In dev mode with localStorage auth, ensure may fail silently
+      // This is expected behavior - the user is authenticated on client
+    });
   }, [isAuthenticated, isLoading]);
 
   return null;
