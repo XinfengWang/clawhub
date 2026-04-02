@@ -20,10 +20,8 @@ curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt-get update
 sudo apt-get install -y nodejs nginx
 
-# 2. 安装 Bun
-curl -fsSL https://bun.sh/install | bash
-export BUN_INSTALL="$HOME/.bun"
-export PATH="$BUN_INSTALL/bin:$PATH"
+# 2. 安装 pnpm
+npm install -g pnpm
 
 # 3. 克隆项目
 echo "📥 克隆项目..."
@@ -32,7 +30,7 @@ cd /opt/clawhub
 
 # 4. 安装依赖
 echo "📦 安装依赖..."
-bun install
+pnpm install
 
 # 5. 配置环境变量
 echo "⚙️ 配置环境..."
@@ -45,7 +43,7 @@ EOF
 
 # 6. 构建
 echo "🔨 构建..."
-bun run build
+pnpm run build
 
 # 7. 部署后端
 echo "☁️ 部署 Convex..."
@@ -84,10 +82,10 @@ echo "✅ 部署完成！访问 http://your-server-ip"
 
 ```bash
 # 1. 安装依赖
-bun install
+pnpm install
 
 # 2. 启动开发服务器
-bun run dev
+pnpm run dev
 # 访问 http://localhost:3000
 
 # 3. 启动 Convex 后端
@@ -98,17 +96,17 @@ npx convex dev
 
 ```bash
 # 构建生产版本
-bun run build
+pnpm run build
 
 # 预览构建结果
-bun run preview
+pnpm run preview
 
 # 检查构建大小
 ls -lah dist/
 
 # 清除构建缓存
 rm -rf dist/
-bun run build
+pnpm run build
 ```
 
 ### 后端部署
@@ -137,10 +135,10 @@ npx convex export > backup.zip
 
 ```bash
 # 方式 1: 直接运行
-bun run preview
+pnpm run preview
 
 # 方式 2: 使用 PM2
-pm2 start "bun run preview" --name "clawhub"
+pm2 start "pnpm run preview" --name "clawhub"
 pm2 save
 pm2 startup
 pm2 monit
@@ -158,7 +156,7 @@ pm2 restart clawhub
 pm2 delete clawhub
 ```
 
-### Docker 部署
+### Docker 部署 (Node + pnpm)
 
 ```bash
 # 构建镜像
@@ -171,6 +169,23 @@ docker run -d \
   -e VITE_SITE_MODE=skills \
   --name clawhub \
   clawhub:latest
+
+# 使用 Docker Compose
+cat > docker-compose.yml << EOF
+version: '3.8'
+services:
+  clawhub:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      VITE_CONVEX_URL: https://your-convex.convex.cloud
+      VITE_SITE_MODE: skills
+    restart: unless-stopped
+EOF
+
+# 启动 docker-compose
+docker-compose up -d
 
 # 查看容器日志
 docker logs -f clawhub
@@ -273,8 +288,8 @@ ab -n 1000 -c 10 http://localhost:3000/
 ```bash
 cd /opt/clawhub
 git pull origin main
-bun install
-bun run build
+pnpm install
+pnpm run build
 npx convex deploy --prod
 pm2 restart clawhub
 ```
@@ -283,7 +298,7 @@ pm2 restart clawhub
 
 ```bash
 nano .env.local  # 编辑文件
-bun run build    # 重新构建
+pnpm run build   # 重新构建
 pm2 restart clawhub
 ```
 
@@ -300,7 +315,8 @@ pm2 monit
 ```bash
 cd /opt/clawhub
 git revert HEAD
-bun run build
+pnpm install
+pnpm run build
 npx convex deploy --prod
 pm2 restart clawhub
 ```
@@ -335,6 +351,7 @@ npx convex import convex-backup-YYYYMMDD.zip
 | 应用崩溃 | `pm2 restart clawhub` |
 | 503 错误 | 检查 `pm2 logs clawhub` 和 `pm2 monit` |
 | 端口被占用 | `sudo lsof -i :3000` 和 `sudo kill -9 <PID>` |
-| 构建失败 | `rm -rf node_modules && bun install && bun run build` |
+| 构建失败 | `rm -rf node_modules pnpm-lock.yaml && pnpm install && pnpm run build` |
 | 内存不足 | 增加服务器内存或配置 swap |
 | Nginx 不工作 | `sudo nginx -t` 和 `sudo systemctl restart nginx` |
+| pnpm 找不到 | `npm install -g pnpm` |

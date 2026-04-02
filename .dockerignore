@@ -1,0 +1,12 @@
+.git
+.gitignore
+node_modules
+dist
+.DS_Store
+.env.local
+.convex
+pnpm-lock.yaml
+bun.lock
+bun.lockb
+.next
+.turbo
