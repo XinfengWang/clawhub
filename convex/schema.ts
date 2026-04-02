@@ -23,6 +23,7 @@ const users = defineTable({
   handle: v.optional(v.string()),
   displayName: v.optional(v.string()),
   bio: v.optional(v.string()),
+  passwordHash: v.optional(v.string()), // For local email/password auth
   role: v.optional(v.union(v.literal("admin"), v.literal("moderator"), v.literal("user"))),
   githubCreatedAt: v.optional(v.number()),
   githubFetchedAt: v.optional(v.number()),
