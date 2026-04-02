@@ -158,22 +158,24 @@ async function handleAdminRestore(
   const targetUser = await ctx.runQuery(api.users.getByHandle, { handle });
   if (!targetUser?._id) return text("User not found", 404, headers);
 
-  try {
-    const result = await ctx.runAction(internal.githubRestore.restoreUserSkillsFromBackup, {
-      actorUserId,
-      ownerHandle: handle,
-      ownerUserId: targetUser._id,
-      slugs,
-      forceOverwriteSquatter,
-    });
-    return json(result, 200, headers);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Restore failed";
-    if (message.toLowerCase().includes("forbidden")) {
-      return text("Forbidden", 403, headers);
-    }
-    return text(message, 400, headers);
-  }
+  // GitHub restore disabled during auth system setup
+  return text("GitHub restore temporarily unavailable", 503, headers);
+  // try {
+  //   const result = await ctx.runAction(internal.githubRestore.restoreUserSkillsFromBackup, {
+  //     actorUserId,
+  //     ownerHandle: handle,
+  //     ownerUserId: targetUser._id,
+  //     slugs,
+  //     forceOverwriteSquatter,
+  //   });
+  //   return json(result, 200, headers);
+  // } catch (error) {
+  //   const message = error instanceof Error ? error.message : "Restore failed";
+  //   if (message.toLowerCase().includes("forbidden")) {
+  //     return text("Forbidden", 403, headers);
+  //   }
+  //   return text(message, 400, headers);
+  // }
 }
 
 /**

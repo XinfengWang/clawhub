@@ -323,20 +323,21 @@ export async function publishVersionForUser(
 
   const ownerHandle = owner?.handle ?? owner?.displayName ?? owner?.name ?? "unknown";
 
-  if (!options.skipBackup) {
-    void ctx.scheduler
-      .runAfter(0, internal.githubBackupsNode.backupSkillForPublishInternal, {
-        slug,
-        version,
-        displayName,
-        ownerHandle,
-        files: publishFiles,
-        publishedAt: Date.now(),
-      })
-      .catch((error) => {
-        console.error("GitHub backup scheduling failed", error);
-      });
-  }
+  // GitHub backup disabled during auth system setup
+  // if (!options.skipBackup) {
+  //   void ctx.scheduler
+  //     .runAfter(0, internal.githubBackupsNode.backupSkillForPublishInternal, {
+  //       slug,
+  //       version,
+  //       displayName,
+  //       ownerHandle,
+  //       files: publishFiles,
+  //       publishedAt: Date.now(),
+  //     })
+  //     .catch((error) => {
+  //       console.error("GitHub backup scheduling failed", error);
+  //     });
+  // }
 
   if (!options.skipWebhook) {
     void schedulePublishWebhook(ctx, {

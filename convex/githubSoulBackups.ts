@@ -140,30 +140,31 @@ export const setGitHubSoulBackupSyncStateInternal = internalMutation({
   },
 });
 
-export const syncGitHubSoulBackups: ReturnType<typeof action> = action({
-  args: {
-    dryRun: v.optional(v.boolean()),
-    batchSize: v.optional(v.number()),
-    maxBatches: v.optional(v.number()),
-    resetCursor: v.optional(v.boolean()),
-  },
-  handler: async (ctx, args): Promise<SyncGitHubSoulBackupsResult> => {
-    const { user } = await requireUserFromAction(ctx);
-    assertRole(user, ["admin"]);
-
-    if (args.resetCursor && !args.dryRun) {
-      await ctx.runMutation(internal.githubSoulBackups.setGitHubSoulBackupSyncStateInternal, {
-        cursor: undefined,
-      });
-    }
-
-    return ctx.runAction(internal.githubSoulBackupsNode.syncGitHubSoulBackupsInternal, {
-      dryRun: args.dryRun,
-      batchSize: args.batchSize,
-      maxBatches: args.maxBatches,
-    }) as Promise<SyncGitHubSoulBackupsResult>;
-  },
-});
+// GitHub soul backup disabled during auth system setup
+// export const syncGitHubSoulBackups: ReturnType<typeof action> = action({
+//   args: {
+//     dryRun: v.optional(v.boolean()),
+//     batchSize: v.optional(v.number()),
+//     maxBatches: v.optional(v.number()),
+//     resetCursor: v.optional(v.boolean()),
+//   },
+//   handler: async (ctx, args): Promise<SyncGitHubSoulBackupsResult> => {
+//     const { user } = await requireUserFromAction(ctx);
+//     assertRole(user, ["admin"]);
+//
+//     if (args.resetCursor && !args.dryRun) {
+//       await ctx.runMutation(internal.githubSoulBackups.setGitHubSoulBackupSyncStateInternal, {
+//         cursor: undefined,
+//       });
+//     }
+//
+//     return ctx.runAction(internal.githubSoulBackupsNode.syncGitHubSoulBackupsInternal, {
+//       dryRun: args.dryRun,
+//       batchSize: args.batchSize,
+//       maxBatches: args.maxBatches,
+//     }) as Promise<SyncGitHubSoulBackupsResult>;
+//   },
+// });
 
 function clampInt(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, Math.floor(value)));

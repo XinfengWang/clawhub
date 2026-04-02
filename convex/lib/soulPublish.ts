@@ -182,18 +182,19 @@ export async function publishSoulVersionForUser(
   })) as Doc<"users"> | null;
   const ownerHandle = owner?.handle ?? owner?.name ?? userId;
 
-  void ctx.scheduler
-    .runAfter(0, internal.githubSoulBackupsNode.backupSoulForPublishInternal, {
-      slug,
-      version,
-      displayName,
-      ownerHandle,
-      files: publishFiles,
-      publishedAt: Date.now(),
-    })
-    .catch((error) => {
-      console.error("GitHub soul backup scheduling failed", error);
-    });
+  // GitHub soul backup disabled during auth system setup
+  // void ctx.scheduler
+  //   .runAfter(0, internal.githubSoulBackupsNode.backupSoulForPublishInternal, {
+  //     slug,
+  //     version,
+  //     displayName,
+  //     ownerHandle,
+  //     files: publishFiles,
+  //     publishedAt: Date.now(),
+  //   })
+  //   .catch((error) => {
+  //     console.error("GitHub soul backup scheduling failed", error);
+  //   });
 
   return publishResult;
 }

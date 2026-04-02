@@ -158,33 +158,34 @@ export const setGitHubBackupSyncStateInternal = internalMutation({
   },
 });
 
-export const syncGitHubBackups: ReturnType<typeof action> = action({
-  args: {
-    dryRun: v.optional(v.boolean()),
-    batchSize: v.optional(v.number()),
-    maxBatches: v.optional(v.number()),
-    pruneBatchSize: v.optional(v.number()),
-    resetCursor: v.optional(v.boolean()),
-  },
-  handler: async (ctx, args): Promise<SyncGitHubBackupsResult> => {
-    const { user } = await requireUserFromAction(ctx);
-    assertRole(user, ["admin"]);
-
-    if (args.resetCursor && !args.dryRun) {
-      await ctx.runMutation(internal.githubBackups.setGitHubBackupSyncStateInternal, {
-        cursor: undefined,
-        pruneCursor: undefined,
-      });
-    }
-
-    return ctx.runAction(internal.githubBackupsNode.syncGitHubBackupsInternal, {
-      dryRun: args.dryRun,
-      batchSize: args.batchSize,
-      maxBatches: args.maxBatches,
-      pruneBatchSize: args.pruneBatchSize,
-    }) as Promise<SyncGitHubBackupsResult>;
-  },
-});
+// GitHub backup disabled during auth system setup
+// export const syncGitHubBackups: ReturnType<typeof action> = action({
+//   args: {
+//     dryRun: v.optional(v.boolean()),
+//     batchSize: v.optional(v.number()),
+//     maxBatches: v.optional(v.number()),
+//     pruneBatchSize: v.optional(v.number()),
+//     resetCursor: v.optional(v.boolean()),
+//   },
+//   handler: async (ctx, args): Promise<SyncGitHubBackupsResult> => {
+//     const { user } = await requireUserFromAction(ctx);
+//     assertRole(user, ["admin"]);
+//
+//     if (args.resetCursor && !args.dryRun) {
+//       await ctx.runMutation(internal.githubBackups.setGitHubBackupSyncStateInternal, {
+//         cursor: undefined,
+//         pruneCursor: undefined,
+//       });
+//     }
+//
+//     return ctx.runAction(internal.githubBackupsNode.syncGitHubBackupsInternal, {
+//       dryRun: args.dryRun,
+//       batchSize: args.batchSize,
+//       maxBatches: args.maxBatches,
+//       pruneBatchSize: args.pruneBatchSize,
+//     }) as Promise<SyncGitHubBackupsResult>;
+//   },
+// });
 
 function clampInt(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, Math.floor(value)));

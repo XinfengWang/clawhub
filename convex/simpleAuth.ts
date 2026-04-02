@@ -222,26 +222,3 @@ export const simpleSignIn = mutation({
   },
 });
 
-/**
- * Stub function that matches Convex Auth API
- */
-export const signIn = mutation({
-  args: {
-    provider: v.string(),
-    formData: v.any(),
-  },
-  handler: async (ctx, args) => {
-    // Extract email and password from FormData
-    const formDataObj = args.formData;
-    const email = formDataObj?.email || "dev@example.com";
-    const password = formDataObj?.password || "";
-    const name = formDataObj?.name;
-
-    // Call simpleSignIn directly with auth logic
-    return await ctx.runMutation(simpleSignIn, {
-      email,
-      password,
-      name,
-    });
-  },
-});

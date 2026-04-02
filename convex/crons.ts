@@ -3,12 +3,13 @@ import { internal } from "./_generated/api";
 
 const crons = cronJobs();
 
-crons.interval(
-  "github-backup-sync",
-  { minutes: 30 },
-  internal.githubBackupsNode.syncGitHubBackupsInternal,
-  { batchSize: 50, maxBatches: 5 },
-);
+// Disabled during auth system setup - GitHub backup functions are temporarily unavailable
+// crons.interval(
+//   "github-backup-sync",
+//   { minutes: 30 },
+//   internal.githubBackupsNode.syncGitHubBackupsInternal,
+//   { batchSize: 50, maxBatches: 5 },
+// );
 
 crons.interval(
   "trending-leaderboard",
